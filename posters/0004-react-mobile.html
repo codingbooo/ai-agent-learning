@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Lesson 0004 Mobile Card: ReAct Loop</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000000;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      color: #f8fafc;
+      width: 420px;
+      margin: 0 auto;
+      padding: 14px;
+    }
+    .mobile-card {
+      background: #090d16;
+      border: 1.5px solid #1e293b;
+      border-radius: 20px;
+      padding: 18px 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+    .pulse {
+      font-size: 10.5px;
+      color: #34d399;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .pulse::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      background: #34d399;
+      border-radius: 50%;
+      box-shadow: 0 0 6px #34d399;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.35;
+      margin-bottom: 4px;
+    }
+    .sub {
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.45;
+      margin-bottom: 16px;
+    }
+
+    /* Vertical Flow Layout */
+    .flow-stream {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+
+    .node {
+      background: #0f172a;
+      border: 1.5px solid #1e293b;
+      border-radius: 12px;
+      padding: 12px 14px;
+      position: relative;
+    }
+
+    .node.thought {
+      border-color: #0284c7;
+      background: linear-gradient(180deg, rgba(14, 165, 233, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%);
+    }
+
+    .node.action {
+      border-color: #059669;
+      background: linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%);
+    }
+
+    .node.obs {
+      border-color: #d97706;
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%);
+    }
+
+    .node.decision {
+      border-color: #475569;
+      background: #111827;
+      text-align: center;
+      padding: 10px;
+    }
+
+    .node-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+
+    .step-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.08);
+      color: #94a3b8;
+    }
+
+    .step-body {
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    .step-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin-top: 6px;
+      color: #38bdf8;
+      word-break: break-all;
+    }
+
+    .flow-connector {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 14px;
+      color: #64748b;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    /* Loop Back Banner */
+    .loop-card {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px dashed #0284c7;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 10.5px;
+      color: #7dd3fc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .warning-card {
+      background: rgba(225, 29, 72, 0.1);
+      border: 1.5px solid #e11d48;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 14px;
+    }
+    .warning-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #fb7185;
+      margin-bottom: 4px;
+    }
+    .warning-text {
+      font-size: 10.5px;
+      color: #fecdd3;
+      line-height: 1.4;
+    }
+
+    /* Challenge Box */
+    .challenge-box {
+      margin-top: 14px;
+      background: linear-gradient(180deg, #131c31 0%, #0b1120 100%);
+      border: 1.5px solid #38bdf8;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
+    }
+    .challenge-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .challenge-p {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.45;
+      margin-bottom: 8px;
+    }
+    .prompt-bubble {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 11px;
+      color: #fde68a;
+      line-height: 1.5;
+    }
+    .footer-note {
+      text-align: center;
+      font-size: 9.5px;
+      color: #475569;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="mobile-card">
+    <div class="top-bar">
+      <span class="tag">LESSON 0004 · 状态机</span>
+      <span class="pulse">手机竖屏专版</span>
+    </div>
+
+    <h1>ReAct 状态机：Agent 自治循环</h1>
+    <p class="sub">以 Android 事件循环视角，解构智能体如何连续决策与执行。</p>
+
+    <div class="flow-stream">
+      <!-- 目标 -->
+      <div style="background:#1e293b; border-radius:8px; padding:7px 10px; text-align:center; font-size:11px; font-weight:600; color:#e2e8f0;">
+        🎯 用户目标 (Goal: 审批权限并同步后台)
+      </div>
+
+      <div class="flow-connector">↓</div>
+
+      <!-- 1. Thought -->
+      <div class="node thought">
+        <div class="node-header">
+          <span class="step-title" style="color:#38bdf8;">🧠 1. THOUGHT (认知推导)</span>
+          <span class="step-chip">LLM 内核</span>
+        </div>
+        <div class="step-body">基于目标分析现状，在工具库中匹配最优算子：</div>
+        <div class="step-code">"缺少Token凭证，首步应调用 auth_token 工具获取鉴权..."</div>
+      </div>
+
+      <div class="flow-connector">↓ 生成 ToolCall JSON</div>
+
+      <!-- 2. Action -->
+      <div class="node action">
+        <div class="node-header">
+          <span class="step-title" style="color:#34d399;">⚡ 2. ACTION (动作下发)</span>
+          <span class="step-chip">Harness 装具</span>
+        </div>
+        <div class="step-body">拦截 Tool 调用，从本地 Keychain 自动代填凭据并执行：</div>
+        <div class="step-code" style="color:#34d399;">call_tool("fetch_token", { scope: "admin" })</div>
+      </div>
+
+      <div class="flow-connector">↓ 捕获执行真实 stdout</div>
+
+      <!-- 3. Observation -->
+      <div class="node obs">
+        <div class="node-header">
+          <span class="step-title" style="color:#fbbf24;">👁️ 3. OBSERVATION (环境观察)</span>
+          <span class="step-chip">结果入队</span>
+        </div>
+        <div class="step-body">捕获底层物理真实反馈，无损追加回上下文：</div>
+        <div class="step-code" style="color:#fbbf24;">{"status": "ok", "token": "eyJh...89", "code": 200}</div>
+      </div>
+
+      <div class="flow-connector">↓ 状态判定</div>
+
+      <!-- 4. Decision -->
+      <div class="node decision">
+        <div style="font-size:11.5px; font-weight:700; color:#ffffff; margin-bottom:6px;">❓ 任务是否完全闭环？</div>
+        <div style="display:flex; gap:8px;">
+          <div class="loop-card" style="flex:1;">
+            <span>❌ 未达成</span>
+            <strong>带上 Observation 回流 ➔</strong>
+          </div>
+          <div style="background:rgba(16,185,129,0.15); border:1px solid #10b981; border-radius:8px; padding:8px 10px; font-size:10.5px; color:#34d399; font-weight:700; display:flex; align-items:center;">
+            ✓ 交付结果
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 警示卡 -->
+    <div class="warning-card">
+      <div class="warning-title">🚨 死锁打杂陷阱 (ReAct Infinite Loop)</div>
+      <div class="warning-text">
+        如果底层返回 403/反爬且未说明根因，Agent 就会在缺乏新信息的情况下反复猜疑重试，把你变成疯狂处理验证码的“肉身打杂工”！
+      </div>
+    </div>
+
+    <!-- 实战挑战卡 -->
+    <div class="challenge-box">
+      <div class="challenge-title">🎯 本课实战行动卡 (Action Challenge)</div>
+      <p class="challenge-p">对照 Android 底层 <code>Looper / Handler / MessageQueue</code>：</p>
+      <div class="prompt-bubble">
+        <strong>💬 请在 Telegram 聊天框中直接回复我：</strong><br>
+        1. 在 ReAct 状态机中，谁扮演了 <strong>MessageQueue（消息队列）</strong>？<br>
+        2. 当 Agent 死锁打转时，从消息驱动机制看，本质上缺少了什么关键机制？
+      </div>
+    </div>
+
+    <div class="footer-note">AI 原理 · Harness · Agent 体系课 · 手机原生阅读版</div>
+  </div>
+</body>
+</html>
