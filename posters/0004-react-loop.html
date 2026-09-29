@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Lesson 0004 Architecture Poster: ReAct Loop</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #020617;
+      font-family: 'JetBrains Mono', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      color: #f8fafc;
+      padding: 24px;
+      width: 760px;
+      margin: 0 auto;
+    }
+    .poster-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1.5px solid #1e293b;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .header {
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+    }
+    .badge-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .status {
+      font-size: 11px;
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      background: #34d399;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 8px #34d399;
+    }
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.5;
+    }
+    .diagram-wrap {
+      margin: 20px 0;
+    }
+    svg {
+      width: 100%;
+      display: block;
+    }
+    .action-box {
+      margin-top: 20px;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.95));
+      border: 1.5px solid #0284c7;
+      border-radius: 12px;
+      padding: 18px 20px;
+      box-shadow: 0 4px 20px rgba(2, 132, 199, 0.2);
+    }
+    .action-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .action-desc {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+    .reply-target {
+      background: #020617;
+      border: 1px dashed #38bdf8;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 11.5px;
+      color: #fde68a;
+      line-height: 1.5;
+    }
+    .footer {
+      margin-top: 18px;
+      text-align: center;
+      font-size: 10px;
+      color: #475569;
+    }
+  </style>
+</head>
+<body>
+  <div class="poster-card">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-bar">
+        <span class="badge">Lesson 0004 · 状态机与智能体循环</span>
+        <span class="status">LIVE EXECUTION</span>
+      </div>
+      <h1>ReAct 状态机：Agent 是如何推导并自主干活的？</h1>
+      <p class="subtitle">解构 Thought ➔ Action ➔ Observation 动态事件循环，透视 Agent 为什么会死锁及如何破局打杂。</p>
+    </div>
+
+    <!-- Diagram -->
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 710 690">
+        <defs>
+          <marker id="arrow" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 9 3, 0 6" fill="#38bdf8" />
+          </marker>
+          <marker id="arrow-green" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 9 3, 0 6" fill="#34d399" />
+          </marker>
+          <marker id="arrow-amber" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 9 3, 0 6" fill="#fbbf24" />
+          </marker>
+          <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
+            <path d="M 28 0 L 0 0 0 28" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
+
+        <!-- Grid BG -->
+        <rect width="100%" height="100%" fill="url(#grid)" rx="10"/>
+
+        <!-- 目标与输入 -->
+        <rect x="235" y="20" width="240" height="42" rx="8" fill="rgba(30, 41, 59, 0.7)" stroke="#64748b" stroke-width="1.5"/>
+        <text x="355" y="46" fill="#f8fafc" font-size="12" font-weight="600" text-anchor="middle">🎯 任务目标 (Goal: 审批并抓取数据)</text>
+
+        <line x1="355" y1="62" x2="355" y2="88" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- 步骤 1: Thought 推导 -->
+        <rect x="155" y="92" width="400" height="74" rx="10" fill="rgba(14, 165, 233, 0.1)" stroke="#38bdf8" stroke-width="1.8"/>
+        <text x="175" y="116" fill="#38bdf8" font-size="12" font-weight="700">1. THOUGHT (认知推导 · 神经元芯片计算)</text>
+        <text x="175" y="136" fill="#cbd5e1" font-size="10.5">"当前没有登录态，需先调用 auth_token 工具获取凭据..."</text>
+        <text x="175" y="152" fill="#94a3b8" font-size="9.5">分析现状 ➔ 拆解子目标 ➔ 从已注册工具库中匹配最优算子</text>
+
+        <line x1="355" y1="166" x2="355" y2="194" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="365" y="184" fill="#94a3b8" font-size="9">生成 ToolCall JSON</text>
+
+        <!-- 步骤 2: Action 执行 -->
+        <rect x="155" y="198" width="400" height="74" rx="10" fill="rgba(6, 78, 59, 0.35)" stroke="#34d399" stroke-width="1.8"/>
+        <text x="175" y="222" fill="#34d399" font-size="12" font-weight="700">2. ACTION (动作下发 · 触发 Harness 装具)</text>
+        <text x="175" y="242" fill="#cbd5e1" font-size="10.5">call_tool("fetch_admin_token", { scope: "read_write" })</text>
+        <text x="175" y="258" fill="#94a3b8" font-size="9.5">参数契约校验 ➔ 凭据自动代填 ➔ 下发至物理系统 / API 执行</text>
+
+        <line x1="355" y1="272" x2="355" y2="300" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+        <text x="365" y="290" fill="#94a3b8" font-size="9">执行结果 stdout / JSON</text>
+
+        <!-- 步骤 3: Observation 观察 -->
+        <rect x="155" y="304" width="400" height="74" rx="10" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.8"/>
+        <text x="175" y="328" fill="#fbbf24" font-size="12" font-weight="700">3. OBSERVATION (环境观察 · 状态反馈)</text>
+        <text x="175" y="348" fill="#fde68a" font-size="10.5">{"status": "success", "token": "eyJh...89", "expires": 3600}</text>
+        <text x="175" y="364" fill="#94a3b8" font-size="9.5">捕获物理世界执行真实产出，将其作为新消息追加进 Context</text>
+
+        <!-- 步骤 4: 判定与分流 -->
+        <line x1="355" y1="378" x2="355" y2="406" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-amber)"/>
+
+        <polygon points="355,410 435,450 355,490 275,450" fill="rgba(30, 41, 59, 0.9)" stroke="#94a3b8" stroke-width="1.5"/>
+        <text x="355" y="446" fill="#f8fafc" font-size="11" font-weight="600" text-anchor="middle">任务是否达成?</text>
+        <text x="355" y="462" fill="#94a3b8" font-size="9" text-anchor="middle">Is Goal Met?</text>
+
+        <!-- 分支 A: 未完成 -> 循环回流 -->
+        <path d="M 435 450 L 590 450 Q 605 450 605 430 L 605 140 Q 605 120 560 120" fill="none" stroke="#38bdf8" stroke-width="1.8" stroke-dasharray="6,4" marker-end="url(#arrow)"/>
+        <text x="590" y="280" fill="#38bdf8" font-size="10" font-weight="600" transform="rotate(90, 590, 280)" text-anchor="middle">[NO 未完成] 携带新观察启动第 N+1 轮推导</text>
+
+        <!-- 分支 B: 完成 -> 输出结果 -->
+        <line x1="355" y1="490" x2="355" y2="524" stroke="#34d399" stroke-width="1.8" marker-end="url(#arrow-green)"/>
+        <text x="365" y="512" fill="#34d399" font-size="9" font-weight="600">[YES 达成]</text>
+
+        <rect x="215" y="528" width="280" height="44" rx="8" fill="rgba(6, 78, 59, 0.6)" stroke="#34d399" stroke-width="1.8"/>
+        <text x="355" y="555" fill="#34d399" font-size="12" font-weight="700" text-anchor="middle">🏁 最终完成 (Final Answer Delivered)</text>
+
+        <!-- 底部异常警示 -->
+        <rect x="65" y="600" width="580" height="66" rx="8" fill="rgba(136, 19, 55, 0.25)" stroke="#fb7185" stroke-width="1.2" stroke-dasharray="4,4"/>
+        <text x="85" y="624" fill="#fb7185" font-size="11" font-weight="700">⚠️ 系统死锁警示 (The ReAct Loop Trap):</text>
+        <text x="85" y="642" fill="#fecdd3" font-size="9.5">如果 Observation 返回 403 且没有提供有效错误原因，Agent 将在没有新信息的情况下重复猜疑，</text>
+        <text x="85" y="656" fill="#fecdd3" font-size="9.5">导致陷入死循环重试（无限打杂），直到触发 Harness 熔断或把你的 Token 额度烧光！</text>
+      </svg>
+    </div>
+
+    <!-- Action Challenge Card -->
+    <div class="action-box">
+      <div class="action-title">
+        <span>🎯 本课实战行动卡 (Action Challenge)</span>
+      </div>
+      <p class="action-desc">
+        结合你在 Android 开发中极其熟悉的 <strong>Looper / Handler / MessageQueue</strong> 事件循环，对比上面的 ReAct 循环：
+      </p>
+      <div class="reply-target">
+        <strong>💬 请直接在 Telegram 聊天框中回复我：</strong><br>
+        1. 在 ReAct 状态机中，谁扮演了 <strong>MessageQueue（消息队列）</strong> 的角色？<br>
+        2. 当你的 Agent 在处理内部网页后台死锁打转时，从消息循环角度看，是因为缺少了哪种机制？
+      </div>
+    </div>
+
+    <div class="footer">
+      AI 原理 · Harness · Agent 体系课 · 紧密反馈学习记录系统
+    </div>
+  </div>
+</body>
+</html>
