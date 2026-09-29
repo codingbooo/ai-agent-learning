@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0003: Harness 解剖学 —— 主板、沙盒与工具拦截层</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+  <header>
+    <div class="lesson-meta">Lesson 0003 · 运行时架构与系统工程</div>
+    <h1>Harness 解剖学：主板、沙盒与工具拦截层</h1>
+    <p>为什么大模型绝不能裸奔？剖析连接“神经元芯片”与“物理操作系统”的核心装具。</p>
+  </header>
+
+  <main>
+    <h2>一、 裸模型的物理局限：它只是纯粹的文本转移函数</h2>
+    <p>回顾前两课，我们得出一个确定结论：<strong>LLM（大语言模型）本质上只是一个在闭环内做 Next-Token 预测的数学函数。</strong></p>
+    <blockquote>
+      <code>y = f(x)</code> —— 它没有网络栈，没有文件描述符，没有终端执行器，也没有系统权限。
+    </blockquote>
+    <p>如果让它“裸奔”，它吐出一句 <code>curl -H "Auth: Bearer xxx" https://api.internal/approve</code>，这句话在屏幕上只是一串字符，对真实物理世界产生不了任何影响。</p>
+    <p>要让它真正干活、并安全地干活，就必须在它外部套上一个<strong>装具（Harness）</strong>。</p>
+
+    <h2>二、 系统映射：Harness 就是计算机的主板与操作系统的 System Call 拦截器</h2>
+    <p>在 Android 系统中，App 进程跑在 Dalvik/ART 虚拟机中，当 App 需要访问网络或相机时，不能随意写内存，必须发起 <strong>系统调用（Syscall）与 Binder IPC</strong>，由内核态与权限系统进行严格校验。</p>
+    <p><strong>Harness 在 AI 体系中扮演的角色完全相同：</strong></p>
+
+    <div style="background:var(--code-bg); border:1px solid var(--border-color); border-radius:6px; padding:1.2rem; margin:1.5rem 0; font-family:monospace; font-size:0.88rem; line-height:1.7;">
+      [用户指令] ──► <strong>【Harness 1: Prompt Framing】</strong> (注入系统角色、上下文脱水、声明可用 Tools)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;【LLM 神经元 CPU】 (计算预测，吐出结构化意图 JSON)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>【Harness 2: Tool Interceptor】</strong> (拦截函数调用: 校验参数与权限)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>【Harness 3: Sandbox Execution】</strong> (隔离执行真实 Shell/API，捕获输出)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<strong>【Harness 4: Circuit Breaker】</strong> (检查循环次数与超时，防死锁/发疯)
+    </div>
+
+    <h2>三、 解剖 Harness 的 4 大核心装具职责</h2>
+    <ol>
+      <li><strong>输入脱水与系统组装（Framing & Sanitization）</strong>：负责把环境事实、记忆、工具 Schema 与用户意图缝合成一个干净的 Context，阻断无关网页噪声（防注意力坍塌）。</li>
+      <li><strong>凭据与权限代理（Credential Vault & Auth Broker）</strong>：<strong>解决你打杂的核心命门！</strong> 模型本身不应知道生产账号密码。Harness 挂载本地受保护的凭证库，在执行工具调用的一瞬间代填 Token，阻断泄露风险。</li>
+      <li><strong>安全沙盒拦截器（Security Sandbox）</strong>：拦截破坏性操作（如 <code>rm -rf /</code> 或未授权的外部请求），强制实现“人在回路确认”（Human-in-the-Loop Approval）。</li>
+      <li><strong>熔断与恢复回路（Retry Circuit Breaker）</strong>：当工具执行返回 404/500 时，Harness 捕获 stderr，决定是重试、纠偏重新输入给模型、还是体面退出。</li>
+    </ol>
+
+    <h2>四、 交互模拟：亲手触发 Harness 的安全拦截与权限代填</h2>
+    <p>在这个模拟器中，体验大模型发起一次后台 API 审批时，Harness 如何在背后做“权限自动挂载”和“高危拦截”：</p>
+
+    <div class="interactive-box">
+      <h3>🛡️ Harness 运行时拦截显微镜</h3>
+      <p style="font-size:0.9rem; color:var(--text-muted);">模拟模型输出了一段工具调用意图。观察 Harness 的拦截管线：</p>
+      
+      <div style="margin-bottom: 1rem;">
+        <button class="btn" id="btn-normal" onclick="simulateHarness('auth')">场景 A：请求敏感后台操作 (Harness 代填凭证)</button>
+        <button class="btn" id="btn-danger" style="background:var(--warning-color); margin-left:0.5rem;" onclick="simulateHarness('danger')">场景 B：触发越权/高危指令 (Harness 熔断拦截)</button>
+      </div>
+
+      <div id="harness-log" style="background:var(--code-bg); border:1px solid var(--border-color); border-radius:6px; padding:1rem; font-family:monospace; font-size:0.84rem; line-height:1.6; min-height:120px;">
+        <!-- 动态日志输出 -->
+      </div>
+    </div>
+
+    <h2>五、 检索练习（Retrieval Practice）</h2>
+    <div class="interactive-box">
+      <h3>❓ 架构设计检验题</h3>
+      <p><strong>你现在要解决自己“频繁在网页上手动批准权限”的痛点，准备在自己的本地 Harness 中加入一个审批自动化功能。从安全架构角度，最佳的设计原则是什么？</strong></p>
+
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        A. 直接把你的个人超级管理员账号和密码以明文形式写在 Agent 的 System Prompt 里
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        B. 写一个脚本把网页登录后的所有 Session Cookie 永久公网暴露，不做权限范围限定
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, true)">
+        C. 在 Harness 端托管专用的有限权限 Token，暴露受限 API 工具，超范围操作触发审批断点
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        D. 让 Agent 每次启动全套 Chromium 无头浏览器，直接用图像识别去暴力点击网页验证码
+      </div>
+
+      <div id="quiz-feedback" class="quiz-feedback"></div>
+    </div>
+
+    <h2>六、 课后引证与下一课</h2>
+    <p>下一课我们将进入 <strong>Lesson 0004: ReAct 智能体状态机循环</strong>，看清 Agent 是如何在 Harness 的庇护与约束下，一步一步自主推导、调用工具并达成闭环的！</p>
+    <ul>
+      <li><a href="https://github.com/EleutherAI/lm-evaluation-harness" target="_blank">EleutherAI: <em>lm-evaluation-harness</em></a> —— 业界用于评估与隔离驱动大模型的黄金标准 Harness 源码。</li>
+    </ul>
+  </main>
+
+  <footer>
+    <p>AI 原理、Harness 与 Agent 进阶课 · <a href="0002-the-context-cache.html">上一课: 0002</a> · <a href="../GLOSSARY.md">概念词典</a> · <a href="../MISSION.md">使命文档</a></p>
+  </footer>
+
+  <script>
+    function simulateHarness(type) {
+      const log = document.getElementById("harness-log");
+      if (type === 'auth') {
+        log.innerHTML = `
+<span style="color:var(--text-muted)">[1. 模型意图生成]</span> 模型产出 ToolCall: <code>call_backend_api(endpoint="/admin/approve", taskId="8941")</code><br>
+<span style="color:var(--accent-color)">[2. Harness 拦截层]</span> 检测到目标域名 <code>internal.cloud.com</code> 匹配受信凭证池...<br>
+<span style="color:var(--success-color)">[3. Harness 凭证代理]</span> 从安全 Keychain 读取 <code>ADMIN_DELEGATE_TOKEN</code> 并动态注入 HTTP Header...<br>
+<span style="color:var(--success-color)">[4. 沙盒网络调用]</span> 执行 POST 请求完成。HTTP 200 OK: <code>{"status":"approved"}</code><br>
+<span style="color:var(--text-muted)">[5. 结果喂回模型]</span> 成功返回脱水后的结果给模型。<strong>全程无需人工肉身去网页点选！</strong>
+        `;
+      } else {
+        log.innerHTML = `
+<span style="color:var(--text-muted)">[1. 模型意图生成]</span> 模型产出 ToolCall: <code>terminal_exec(cmd="rm -rf /var/log/auth.log")</code><br>
+<span style="color:var(--warning-color)">[2. Harness 安全沙盒]</span> ⚠️ <strong>触发高危指令拦截规则:</strong> 包含敏感系统路径操作！<br>
+<span style="color:var(--warning-color)">[3. 权限熔断触发]</span> 拒绝执行！中断命令向物理机下发。<br>
+<span style="color:var(--accent-color)">[4. 优雅异常回填]</span> 构造安全错误喂回模型: <code>SecurityException: Operation not permitted by Harness sandbox.</code><br>
+<span style="color:var(--text-muted)">[5. 模型自主纠偏]</span> 模型反思并重新规划安全的只读查询替代方案。<strong>物理机系统毫发无损！</strong>
+        `;
+      }
+    }
+
+    simulateHarness('auth');
+
+    function checkAnswer(el, isCorrect) {
+      const feedback = document.getElementById("quiz-feedback");
+      const options = document.querySelectorAll(".quiz-option");
+      options.forEach(opt => opt.style.borderColor = "var(--border-color)");
+
+      if (isCorrect) {
+        el.style.borderColor = "var(--success-color)";
+        feedback.className = "quiz-feedback correct";
+        feedback.innerHTML = "<strong>✅ 回答完全正确！</strong> 这正是解决你“打杂痛点”的标准架构解法：模型永远不接触明文高权密码，而是由外部 Harness 负责凭证注入与安全拦截；通过把重复网页操作收敛成特定有限工具，既杜绝了肉身手动点选，又守住了系统安全底线。";
+      } else {
+        el.style.borderColor = "var(--warning-color)";
+        feedback.className = "quiz-feedback wrong";
+        feedback.innerHTML = "<strong>❌ 再思考一下：</strong> 明文放 Prompt 极易因上下文注入被窃取，全放开权限更是灾难，而暴力点验证码则是最脆弱的打杂路线。想一想，哪种方案既能自动化，又符合最小权限原则（Principle of Least Privilege）？";
+      }
+    }
+  </script>
+</body>
+</html>
