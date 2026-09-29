@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0001: 神经元 CPU —— 解构大模型的生成机理</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+  <header>
+    <div class="lesson-meta">Lesson 0001 · AI 原理与系统心智</div>
+    <h1>神经元 CPU：解构大模型的本质</h1>
+    <p>建立工程师的第一性原理：LLM 不是在“思考”，它是一台自回归的概率预测机。</p>
+  </header>
+
+  <main>
+    <h2>一、 核心心智模型：从 ARM CPU 到神经元预测器</h2>
+    <p>作为一个 Android 工程师，你非常熟悉 CPU 的运作：给定程序计数器（PC 指针）指向的内存地址，CPU 取指、译码、执行，推进到下一条指令。</p>
+    <p>现代大型语言模型（LLM）在物理架构上与此惊人相似：</p>
+    <blockquote>
+      <strong>LLM 的本质：一个基于上文上下文（Context），持续预测“下一个最合理 Token”的自回归转移概率矩阵。</strong>
+    </blockquote>
+    <p>它并不具备人类意义上的全局全知意识，也不在背后“先深思熟虑再动笔”。它的生成过程是纯线性的：</p>
+    <pre><code>Token 0 ("用户") ──► [模型计算] ──► 预测 Token 1 ("点击")
+Token 0 + Token 1 ──► [模型计算] ──► 预测 Token 2 ("了")
+Token 0 + Token 1 + Token 2 ──► [模型计算] ──► 预测 Token 3 ("登录")</code></pre>
+
+    <h2>二、 为什么它会“胡说八道”（幻觉的物理根源）</h2>
+    <p>为什么大模型经常生成看似完美、实则不存在的 Android API 或私有方法？</p>
+    <ul>
+      <li><strong>它是概率合理性引擎，而非真理数据库：</strong> 它的目标函数是最小化“交叉熵损失”（Cross-Entropy Loss），即让下一个词听起来“最像真实人类写出来的代码”。</li>
+      <li><strong>没有物理验证闭环：</strong> 裸模型本身没有连接编译器，它不知道代码能不能过 <code>./gradlew assembleDebug</code>。</li>
+    </ul>
+
+    <h2>三、 交互模拟：Temperature（采样温度）如何改变输出</h2>
+    <p>在 Android 中调节时钟频率会改变发热与功耗；在 LLM 中，<strong>Temperature（温度 $T$）</strong>决定了概率分布的陡峭程度：</p>
+
+    <div class="interactive-box">
+      <h3>🎛️ 概率平滑度模拟器</h3>
+      <p>假设上文是 <code>val intent = Intent(this, </code>，模型预测下一个词的原始打分（Logits）：</p>
+      
+      <div class="slider-container">
+        <label>
+          <span>采样温度 (Temperature): <strong id="temp-val">0.2</strong></span>
+          <span id="temp-desc" style="color: var(--accent-color);">严谨收敛（适合生成代码）</span>
+        </label>
+        <input type="range" id="temp-slider" min="0.1" max="1.5" step="0.1" value="0.2">
+      </div>
+
+      <div id="prob-bars" style="margin-top: 1rem;">
+        <!-- JS 动态渲染概率条 -->
+      </div>
+    </div>
+
+    <h2>四、 检索练习（Retrieval Practice）</h2>
+    <p>请基于刚刚建立的心智模型，回答以下问题以巩固长期留存强度：</p>
+
+    <div class="interactive-box">
+      <h3>❓ 检验题</h3>
+      <p><strong>为什么在设计用于自动化执行权限认证和网页抓取的 Agent 时，必须将模型的 Temperature 设置得非常低（如 0.0 ~ 0.2）？</strong></p>
+
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        A. 因为低温可以成倍降低网络传输开销，显著缩短端到端时延
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, true)">
+        B. 因为低温能压制低概率长尾词，确保工具调用的参数格式稳定
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        C. 因为低温可以强制模型直接连入内网，绕开外部反爬虫的封锁
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        D. 因为低温能够自动清空上下文窗口，防止历史错误信息产生污染
+      </div>
+
+      <div id="quiz-feedback" class="quiz-feedback"></div>
+    </div>
+
+    <h2>五、 推荐权威研读源</h2>
+    <ul>
+      <li><a href="https://arxiv.org/abs/1706.03762" target="_blank">Vaswani et al. (2017) <em>Attention Is All You Need</em></a> —— 奠定整个现代 LLM 基础架构的 Transformer 论文。</li>
+      <li><a href="https://www.youtube.com/watch?v=zjkBMFhNj_g" target="_blank">Andrej Karpathy: <em>[1hr Talk] Intro to Large Language Models</em></a> —— 最通透的高信度底层科普。</li>
+    </ul>
+
+    <div class="interactive-box" style="background: rgba(11, 107, 199, 0.05); border-color: var(--accent-color);">
+      <strong>💡 导师伴学提醒：</strong>
+      <p style="margin: 0.5rem 0 0;">如果你对刚才的概率推演有任何直觉上的疑问，或者想知道这如何解释你之前在网页打杂时遇到的怪现象，请直接在对话框中向我提问！</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>AI 原理、Harness 与 Agent 进阶课 · 紧密反馈教学系统 · <a href="../GLOSSARY.md">概念词典</a> · <a href="../MISSION.md">使命文档</a></p>
+  </footer>
+
+  <script>
+    const logits = [
+      { name: "MainActivity::class.java)", base: 6.0 },
+      { name: "DetailActivity::class.java)", base: 4.5 },
+      { name: "SettingsActivity::class.java)", base: 2.8 },
+      { name: "null)", base: 0.5 },
+      { name: "12345)", base: -1.0 }
+    ];
+
+    function updateProbs(t) {
+      const exps = logits.map(item => Math.exp(item.base / t));
+      const sumExp = exps.reduce((a, b) => a + b, 0);
+      const probs = exps.map(e => e / sumExp);
+
+      const container = document.getElementById("prob-bars");
+      container.innerHTML = "";
+
+      logits.forEach((item, i) => {
+        const p = (probs[i] * 100).toFixed(1);
+        const row = document.createElement("div");
+        row.style.marginBottom = "0.6rem";
+        row.innerHTML = `
+          <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:0.2rem;">
+            <code>${item.name}</code>
+            <span>${p}%</span>
+          </div>
+          <div style="background:var(--code-bg); height:8px; border-radius:4px; overflow:hidden;">
+            <div style="background:var(--accent-color); width:${p}%; height:100%; transition:width 0.2s;"></div>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      const desc = document.getElementById("temp-desc");
+      if (t <= 0.3) {
+        desc.textContent = "极度收敛：贪心选择最高概率词，适合代码与Tool调用";
+        desc.style.color = "var(--success-color)";
+      } else if (t <= 0.8) {
+        desc.textContent = "平衡采样：兼具连贯性与一定发散性，适合通用对话";
+        desc.style.color = "var(--accent-color)";
+      } else {
+        desc.textContent = "发散随机：概率被强行拉平，容易产生幻觉与胡言乱语";
+        desc.style.color = "var(--warning-color)";
+      }
+    }
+
+    const slider = document.getElementById("temp-slider");
+    slider.addEventListener("input", (e) => {
+      const val = parseFloat(e.target.value);
+      document.getElementById("temp-val").textContent = val.toFixed(1);
+      updateProbs(val);
+    });
+
+    updateProbs(0.2);
+
+    function checkAnswer(el, isCorrect) {
+      const feedback = document.getElementById("quiz-feedback");
+      const options = document.querySelectorAll(".quiz-option");
+      options.forEach(opt => opt.style.borderColor = "var(--border-color)");
+
+      if (isCorrect) {
+        el.style.borderColor = "var(--success-color)";
+        feedback.className = "quiz-feedback correct";
+        feedback.innerHTML = "<strong>✅ 回答正确！</strong> 在调度自动化 Agent 时，我们需要模型严格遵循 JSON 格式并精准输出合法的参数。降低 Temperature 可以将 Softmax 概率分布急剧压陡，使得最高概率的标准格式被稳定选中，极大降低因随机采样导致的解析崩溃。";
+      } else {
+        el.style.borderColor = "var(--warning-color)";
+        feedback.className = "quiz-feedback wrong";
+        feedback.innerHTML = "<strong>❌ 再思考一下：</strong> 温度控制的本质是数学上的 Softmax 概率平滑因子，它无法改变网络传输协议，也无法直接穿透内网。想一想，如果模型要在 JSON 中填入参数，温度过高会发生什么？";
+      }
+    }
+  </script>
+</body>
+</html>
