@@ -25,76 +25,93 @@
 
     <h2>二、 系统映射：Harness 就是操作系统的 System Call 拦截器与芯片总线</h2>
     <p>在 Android 系统中，App 运行在沙盒虚拟机（ART）里。当 App 想访问摄像头或发起网络请求时，不能越过内核直接写硬件寄存器，必须通过 <strong>System Call、Binder IPC 与 PermissionManagerService</strong> 校验。</p>
-    <p><strong>Harness 就是大模型世界的 Android 系统框架层。</strong> 请看下方自上而下的完整流水线：</p>
+    <p><strong>Harness 就是大模型世界的 Android 系统框架层。</strong> 请看下方专业级 SVG 系统架构全景图：</p>
 
-    <div class="pipeline-diagram">
-      <!-- 节点 1 -->
-      <div class="pipe-node">
-        <span class="pipe-badge badge-harness">Harness 装具职责 1 · 输入端</span>
-        <div class="pipe-title">
-          <span>Prompt Framing &amp; 上下文脱水</span>
-          <span class="pipe-chip">Context Pre-processing</span>
-        </div>
-        <div class="pipe-desc">
-          接收原始用户需求，剔除脏数据与冗余网页噪音；打包注入 System Prompt、已注册工具清单（Tool Schemas）与短期记忆。
-        </div>
-      </div>
+    <!-- Professional SVG Architecture Diagram -->
+    <div style="background: #020617; border: 1px solid #1e293b; border-radius: 12px; padding: 1.25rem 1rem; margin: 1.8rem 0; overflow-x: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+      <svg viewBox="0 0 680 820" style="width: 100%; min-width: 600px; display: block; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;">
+        <defs>
+          <marker id="arrow" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 9 3, 0 6" fill="#38bdf8" />
+          </marker>
+          <marker id="arrow-rose" markerWidth="9" markerHeight="6" refX="8" refY="3" orient="auto">
+            <polygon points="0 0, 9 3, 0 6" fill="#fb7185" />
+          </marker>
+          <pattern id="diag-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+            <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#1e293b" stroke-width="0.5"/>
+          </pattern>
+        </defs>
 
-      <div class="pipe-arrow"></div>
+        <!-- Background Grid -->
+        <rect width="100%" height="100%" fill="url(#diag-grid)" rx="8" />
 
-      <!-- 节点 2 -->
-      <div class="pipe-node model-core">
-        <span class="pipe-badge badge-core">核心芯片计算 · 神经元 CPU</span>
-        <div class="pipe-title">
-          <span>LLM 概率预测与意图决策</span>
-          <span class="pipe-chip">y = f(x) · Next Token</span>
-        </div>
-        <div class="pipe-desc">
-          基于上下文计算注意力分布。<strong>若不需要调用外部世界</strong>，直接输出自然语言回答；<strong>若需要操作真实环境</strong>，输出结构化意图（如 Tool Call JSON）。
-        </div>
-      </div>
+        <!-- 外部输入源 (User Input) -->
+        <rect x="220" y="30" width="240" height="48" rx="8" fill="rgba(30, 41, 59, 0.7)" stroke="#64748b" stroke-width="1.5"/>
+        <text x="340" y="52" fill="#f8fafc" font-size="13" font-weight="600" text-anchor="middle">用户输入 (User Intent / Task)</text>
+        <text x="340" y="68" fill="#94a3b8" font-size="10" text-anchor="middle">"自动化审批内网权限 / 抓取后台数据"</text>
 
-      <div class="pipe-arrow"></div>
+        <!-- 箭头: 输入 -> Harness Framing -->
+        <line x1="340" y1="78" x2="340" y2="108" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arrow)"/>
 
-      <!-- 节点 3 -->
-      <div class="pipe-node">
-        <span class="pipe-badge badge-harness">Harness 装具职责 2 · 拦截总线</span>
-        <div class="pipe-title">
-          <span>工具拦截与参数契约校验 (Tool Interceptor)</span>
-          <span class="pipe-chip">Syscall / Binder 拦截</span>
-        </div>
-        <div class="pipe-desc">
-          捕获模型吐出的 JSON。校验函数签名与必填字段。若参数格式非法，立即在装具层反弹错误重试，绝不将脏数据下发到底层！
-        </div>
-      </div>
+        <!-- HARNESS 运行时边界 (Dashed Outer Boundary) -->
+        <rect x="50" y="112" width="580" height="530" rx="14" fill="rgba(15, 23, 42, 0.6)" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="70" y="134" fill="#38bdf8" font-size="12" font-weight="700" letter-spacing="0.05em">HARNESS RUNTIME FRAMEWORK (装具与宿主系统)</text>
 
-      <div class="pipe-arrow"></div>
+        <!-- 节点 1: Prompt Framing & 脱水 -->
+        <rect x="180" y="150" width="320" height="60" rx="8" fill="rgba(8, 51, 68, 0.5)" stroke="#06b6d4" stroke-width="1.5"/>
+        <text x="340" y="174" fill="#22d3ee" font-size="12" font-weight="700" text-anchor="middle">1. PROMPT FRAMING &amp; 上下文脱水</text>
+        <text x="340" y="194" fill="#cbd5e1" font-size="10" text-anchor="middle">清洗无关网页噪声 · 注入系统规则 · 声明工具清单</text>
 
-      <!-- 节点 4 -->
-      <div class="pipe-node" style="border-left: 4px solid var(--success-color);">
-        <span class="pipe-badge badge-harness">Harness 装具职责 3 · 核心解脱</span>
-        <div class="pipe-title">
-          <span>凭据代理与自动注入 (Auth Broker &amp; Vault)</span>
-          <span class="pipe-chip">Keychain / Secret Vault</span>
-        </div>
-        <div class="pipe-desc">
-          <strong>解决你肉身打杂的杀手锏：</strong>模型本身不知道任何私钥。Harness 识别目标受信域，从本地安全凭据库透明挂载 Bearer Token / Session Cookie，替你完成后台鉴权！
-        </div>
-      </div>
+        <!-- 箭头: Framing -> 芯片 -->
+        <line x1="340" y1="210" x2="340" y2="242" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="348" y="230" fill="#94a3b8" font-size="9">干净 Context</text>
 
-      <div class="pipe-arrow"></div>
+        <!-- 节点 2: LLM 神经元芯片内核 (高亮强调) -->
+        <rect x="140" y="246" width="400" height="74" rx="10" fill="rgba(14, 165, 233, 0.12)" stroke="#38bdf8" stroke-width="2"/>
+        <text x="340" y="272" fill="#38bdf8" font-size="14" font-weight="700" text-anchor="middle">🧠 LLM 神经元芯片 (Next-Token Engine)</text>
+        <text x="340" y="292" fill="#e2e8f0" font-size="11" text-anchor="middle">执行注意力计算 y = f(x) · 判定需要调用系统接口</text>
+        <text x="340" y="308" fill="#7dd3fc" font-size="9" font-family="monospace" text-anchor="middle">emit ToolCall: {"name": "approve_perm", "args": {...}}</text>
 
-      <!-- 节点 5 -->
-      <div class="pipe-node" style="border-left: 4px solid var(--warning-color);">
-        <span class="pipe-badge badge-system">系统级边界 · 隔离层</span>
-        <div class="pipe-title">
-          <span>沙盒执行与高危熔断 (Sandbox &amp; Circuit Breaker)</span>
-          <span class="pipe-chip">cgroups / Container / Docker</span>
-        </div>
-        <div class="pipe-desc">
-          将经过鉴权与校验的命令下发至物理环境（终端、REST API、无头驱动）。强行拦截破坏性操作（如删库、未授权审批），捕获执行结果喂回。
-        </div>
-      </div>
+        <!-- 箭头: 芯片 -> 工具拦截层 -->
+        <line x1="340" y1="320" x2="340" y2="352" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <text x="348" y="340" fill="#94a3b8" font-size="9">结构化意图 JSON</text>
+
+        <!-- 节点 3: 工具拦截与参数契约校验 -->
+        <rect x="180" y="356" width="320" height="60" rx="8" fill="rgba(6, 78, 59, 0.5)" stroke="#34d399" stroke-width="1.5"/>
+        <text x="340" y="380" fill="#34d399" font-size="12" font-weight="700" text-anchor="middle">2. 工具拦截与契约校验 (INTERCEPTOR)</text>
+        <text x="340" y="400" fill="#cbd5e1" font-size="10" text-anchor="middle">类似 Android Binder 校验 · 拦截脏数据与非法参数</text>
+
+        <!-- 箭头: 拦截器 -> 凭据代理 -->
+        <line x1="340" y1="416" x2="340" y2="448" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- 节点 4: 凭据代理 (解决打杂的核心钥匙) -->
+        <rect x="150" y="452" width="380" height="66" rx="8" fill="rgba(120, 53, 15, 0.4)" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="340" y="476" fill="#fbbf24" font-size="12" font-weight="700" text-anchor="middle">🔑 3. 凭据代理与自动注入 (AUTH BROKER)</text>
+        <text x="340" y="496" fill="#fde68a" font-size="10" font-weight="500" text-anchor="middle">★ 核心解脱：本地 Keychain 自动代填 Token / Cookie</text>
+        <text x="340" y="510" fill="#94a3b8" font-size="9" text-anchor="middle">模型永远不接触明文密码 · 彻底告别肉身网页登录</text>
+
+        <!-- 箭头: 凭据代理 -> 沙盒熔断 -->
+        <line x1="340" y1="518" x2="340" y2="550" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- 节点 5: 执行沙盒与熔断器 -->
+        <rect x="180" y="554" width="320" height="64" rx="8" fill="rgba(136, 19, 55, 0.45)" stroke="#fb7185" stroke-width="1.5"/>
+        <text x="340" y="578" fill="#fb7185" font-size="12" font-weight="700" text-anchor="middle">🛡️ 4. 沙盒执行与高危熔断 (SANDBOX &amp; FUSE)</text>
+        <text x="340" y="598" fill="#fecdd3" font-size="10" text-anchor="middle">拦截 rm -rf 等越权指令 · 隔离环境实际发包 / 调接口</text>
+        <text x="340" y="612" fill="#fda4af" font-size="9" text-anchor="middle">超时自动熔断 · 捕获结果或 stderr 异常回填</text>
+
+        <!-- 箭头: 沙盒 -> 物理世界 -->
+        <line x1="340" y1="642" x2="340" y2="682" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- 物理世界目标 (Operating System & APIs) -->
+        <rect x="120" y="686" width="440" height="66" rx="8" fill="rgba(15, 23, 42, 0.8)" stroke="#64748b" stroke-width="1.5"/>
+        <text x="340" y="710" fill="#f8fafc" font-size="13" font-weight="700" text-anchor="middle">🌐 真实物理世界 (PHYSICAL SYSTEM &amp; APIS)</text>
+        <text x="340" y="730" fill="#94a3b8" font-size="10" text-anchor="middle">内网管理后台 REST 接口 · 云控制台 CLI · 本地文件系统 / Terminal</text>
+        <text x="340" y="744" fill="#34d399" font-size="9" font-weight="600" text-anchor="middle">✓ 业务操作完成并静默返回结果</text>
+
+        <!-- 回流环线 (Feedback Loop to Context) -->
+        <path d="M 560 720 L 650 720 Q 665 720 665 700 L 665 190 Q 665 170 510 170" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <text x="635" y="440" fill="#22d3ee" font-size="10" font-weight="600" transform="rotate(90, 635, 440)" text-anchor="middle">观察结果回填 (Observation Loop)</text>
+      </svg>
     </div>
 
     <h2>三、 解剖 Harness 的 4 大核心装具职责</h2>
