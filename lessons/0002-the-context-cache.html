@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0002: 上下文高速缓存 —— 为什么大模型会“健忘”与“迷失”</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+
+  <header>
+    <div class="lesson-meta">Lesson 0002 · 内存与算力瓶颈</div>
+    <h1>上下文高速缓存：为什么大模型会“健忘”与“迷失”</h1>
+    <p>从片上 RAM 到注意力矩阵：透视 Context Window 的物理代价与信息衰减。</p>
+  </header>
+
+  <main>
+    <h2>一、 核心心智模型：Context 就是模型的片上 L3 Cache</h2>
+    <p>在 Android 系统中，App 如果把海量对象无脑丢在内存中，会引发 GC 频繁停顿甚至 OOM；而在 LLM 的世界里，<strong>上下文窗口（Context Window）</strong>承担着完全相同的角色。</p>
+    <blockquote>
+      <strong>Context 的物理本质：</strong> 模型每一次预测下一个 Token 时，必须“同时注视”并计算上文中所有已存在的 Tokens。
+    </blockquote>
+    <p>这意味着：<strong>上下文不是免费的持久硬盘，而是极其昂贵、算力开销随长度剧增的动态工作缓存。</strong></p>
+
+    <h2>二、 Attention 的二次方开销与“迷失在中间”现象</h2>
+    
+    <h3>1. 计算爆炸：O(N²) 的全连接注意力</h3>
+    <p>在标准 Transformer 架构中，如果上文有 $N$ 个 Tokens，每个 Token 都要和其余所有 Token 做一次点积相关性计算（Self-Attention）。当你的上下文从 4K 膨胀到 64K 时，计算量不是增加 16 倍，而是增加 <strong>256 倍</strong>！这也是为什么超长上下文推理延迟急剧飙升、费用暴涨的原因。</p>
+
+    <h3>2. 为什么它对中间的指令视而不见？（Lost in the Middle）</h3>
+    <p>斯坦福大学的一项经典研究证实：<strong>大模型对位于 Context 开头（Prompt 首部）和结尾（最新输入）的信息召回率最高，而埋在长文本正中间的约束规则，注意力权重会断崖式衰减！</strong></p>
+    <p>这就解释了你之前在用 Agent 时的切身体会：当你给它塞了一大堆错误日志、或者抓回了整整 50KB 包含混乱 HTML 的网页源码时，它不仅找不到关键按钮，还会突然把你一开始定好的规则给“忘”得一干二净！</p>
+
+    <h2>三、 交互模拟：信息淹没与“迷失在中间”实验</h2>
+    <p>点击下方按钮，观察当上下文被大量无关 HTML 噪声塞满时，模型对关键“认证 Token”的注意力关注度（Attention Weight）如何衰减：</p>
+
+    <div class="interactive-box">
+      <h3>🔍 注意力衰减显微镜</h3>
+      <div style="margin-bottom: 1rem;">
+        <button class="btn" id="btn-clean" onclick="setMode('clean')">场景 A：干净精简指令 (300 Tokens)</button>
+        <button class="btn" id="btn-noisy" style="background:var(--code-bg); color:var(--text-color); border:1px solid var(--border-color); margin-left:0.5rem;" onclick="setMode('noisy')">场景 B：塞入50KB网页源码 (30,000 Tokens)</button>
+      </div>
+
+      <div id="attention-visualizer" style="background:var(--bg-color); border:1px solid var(--border-color); border-radius:6px; padding:1rem; font-family:monospace; font-size:0.85rem;">
+        <!-- 动态渲染 -->
+      </div>
+      
+      <p id="mode-insight" style="margin-top:1rem; font-size:0.92rem; color:var(--accent-color); font-weight:500;">
+        当前为干净指令：系统能够以 98% 的注意力强度精准锁定认证指令。
+      </p>
+    </div>
+
+    <h2>四、 检索练习（Retrieval Practice）</h2>
+    <div class="interactive-box">
+      <h3>❓ 架构决策检验题</h3>
+      <p><strong>你在编写自动化脚本让 Agent 处理内部网页后台时，下列哪种做法从“上下文注意力保护”的角度看是最致命的架构错误？</strong></p>
+
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        A. 使用 F12 抓出底层纯 JSON 接口，把抓取结果清洗后再喂给 Agent
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, true)">
+        B. 直接调用无头浏览器 dump 出整个页面的完整 outerHTML 塞入 Context
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        C. 在 Prompt 的末尾显式重申本次任务的核心安全约束与输出格式
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        D. 任务执行多轮失败后，主动清空当前会话并重新启动一个新的干净 Context
+      </div>
+
+      <div id="quiz-feedback" class="quiz-feedback"></div>
+    </div>
+
+    <h2>五、 下节预告与知识引证</h2>
+    <p>既然 Context 如此昂贵且脆弱，那么<strong>谁来负责在外面替模型做输入脱水、沙盒隔离和工具调用拦截？</strong></p>
+    <p>——这就是 <strong>Harness（装具）</strong> 的战场。下一课我们将正式解剖 Harness！</p>
+    <ul>
+      <li><a href="https://arxiv.org/abs/2307.03172" target="_blank">Liu et al. (2023) <em>Lost in the Middle: How Language Models Use Long Contexts</em></a> —— 证明长上下文注意力坍塌的经典论文。</li>
+    </ul>
+
+    <div class="interactive-box" style="background: rgba(11, 107, 199, 0.05); border-color: var(--accent-color);">
+      <strong>💡 导师复盘思考：</strong>
+      <p style="margin: 0.5rem 0 0;">回顾你平时替 AI 打杂处理网页时，你给它看的到底是“经过你人工脱水后的核心数据”，还是“它自己抓回来的一整坨原始网页”？这是否直接对应了它迷路卡死的状态？</p>
+    </div>
+  </main>
+
+  <footer>
+    <p>AI 原理、Harness 与 Agent 进阶课 · <a href="0001-the-neuron-cpu.html">上一课: 0001</a> · <a href="../GLOSSARY.md">概念词典</a> · <a href="../MISSION.md">使命文档</a></p>
+  </footer>
+
+  <script>
+    function setMode(mode) {
+      const container = document.getElementById("attention-visualizer");
+      const insight = document.getElementById("mode-insight");
+      const btnClean = document.getElementById("btn-clean");
+      const btnNoisy = document.getElementById("btn-noisy");
+
+      if (mode === 'clean') {
+        btnClean.style.background = "var(--accent-color)";
+        btnClean.style.color = "white";
+        btnNoisy.style.background = "var(--code-bg)";
+        btnNoisy.style.color = "var(--text-color)";
+
+        container.innerHTML = `
+          <div style="color:var(--text-muted); margin-bottom:0.4rem;">[Prompt 头部 · 注意力权重: 95%] 系统角色: 权限自动化运维</div>
+          <div style="color:var(--success-color); background:rgba(15,118,110,0.1); padding:0.3rem 0.6rem; border-radius:4px; margin:0.4rem 0;">
+            <strong>🎯 关键指令 [权重 98%]:</strong> "提取响应中的 session_token 并写入本地环境"
+          </div>
+          <div style="color:var(--text-muted); margin-top:0.4rem;">[Prompt 尾部 · 注意力权重: 94%] 输出要求: 仅输出 JSON</div>
+        `;
+        insight.textContent = "当前为精炼上下文：核心指令位于有效注意力覆盖区，模型执行概率接近 100%。";
+        insight.style.color = "var(--success-color)";
+      } else {
+        btnNoisy.style.background = "var(--accent-color)";
+        btnNoisy.style.color = "white";
+        btnClean.style.background = "var(--code-bg)";
+        btnClean.style.color = "var(--text-color)";
+
+        container.innerHTML = `
+          <div style="color:var(--text-muted); margin-bottom:0.4rem;">[Prompt 头部 · 注意力 85%] 系统角色: 自动化运维</div>
+          <div style="color:var(--text-muted); font-size:0.75rem; padding:0.2rem 0;">&lt;!DOCTYPE html&gt;&lt;html&gt;&lt;head&gt;... (海量 CSS 与 script 标签) ...</div>
+          <div style="color:var(--warning-color); background:rgba(180,83,9,0.1); padding:0.3rem 0.6rem; border-radius:4px; margin:0.5rem 0;">
+            <strong>⚠️ 迷失在中间 [权重断崖跌至 11%]:</strong> "提取响应中的 session_token 并写入本地环境"
+          </div>
+          <div style="color:var(--text-muted); font-size:0.75rem; padding:0.2rem 0;">... &lt;div class="tracking-beacon" data-v="948293"&gt;... (数万字杂乱DOM) ...</div>
+          <div style="color:var(--text-muted); margin-top:0.4rem;">[Prompt 尾部 · 注意力 72%] 请解析页面并给出结论</div>
+        `;
+        insight.textContent = "⚠️ 注意力坍塌：网页海量 DOM 噪音将关键指令淹没在注意力盲区，Agent 极高概率遗漏指令或胡乱点击！";
+        insight.style.color = "var(--warning-color)";
+      }
+    }
+
+    setMode('clean');
+
+    function checkAnswer(el, isCorrect) {
+      const feedback = document.getElementById("quiz-feedback");
+      const options = document.querySelectorAll(".quiz-option");
+      options.forEach(opt => opt.style.borderColor = "var(--border-color)");
+
+      if (isCorrect) {
+        el.style.borderColor = "var(--success-color)";
+        feedback.className = "quiz-feedback correct";
+        feedback.innerHTML = "<strong>✅ 回答正确！</strong> 直接塞入未经脱水的完整 HTML 是最典型的反模式。几万行的标签和属性不仅会消耗巨量 Token 费用并带来高延迟，更会触发“Lost in the Middle”效应，将核心任务指令彻底稀释淹没，直接导致 Agent 逻辑智商掉线。";
+      } else {
+        el.style.borderColor = "var(--warning-color)";
+        feedback.className = "quiz-feedback wrong";
+        feedback.innerHTML = "<strong>❌ 再想一想：</strong> 这种做法其实是保护上下文的最佳实践。想一想，哪种做法会让上万个无意义的标签直接塞满模型的 L3 Cache？";
+      }
+    }
+  </script>
+</body>
+</html>
