@@ -6,20 +6,24 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: #000000;
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
-      color: #f8fafc;
-      width: 420px;
+    html, body {
+      background: #020617;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+    }
+    .wrapper {
+      padding: 24px 20px 30px;
+      max-width: 480px;
       margin: 0 auto;
-      padding: 14px;
     }
     .mobile-card {
-      background: #090d16;
+      background: #0b1120;
       border: 1.5px solid #1e293b;
       border-radius: 20px;
-      padding: 18px 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      padding: 20px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      width: 100%;
     }
     .top-bar {
       display: flex;
@@ -231,7 +235,8 @@
   </style>
 </head>
 <body>
-  <div class="mobile-card">
+  <div class="wrapper">
+    <div class="mobile-card">
     <div class="top-bar">
       <span class="tag">LESSON 0004 · 状态机</span>
       <span class="pulse">手机竖屏专版</span>
@@ -320,5 +325,6 @@
 
     <div class="footer-note">AI 原理 · Harness · Agent 体系课 · 手机原生阅读版</div>
   </div>
+</div>
 </body>
 </html>
