@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Lesson 0005 Mobile Card: 3 Frictions</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: #020617;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      color: #f8fafc;
+    }
+    .wrapper {
+      padding: 24px 20px 30px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .mobile-card {
+      background: #0b1120;
+      border: 1.5px solid #1e293b;
+      border-radius: 20px;
+      padding: 20px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      width: 100%;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+    .badge-live {
+      font-size: 10.5px;
+      color: #fbbf24;
+      font-weight: 600;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+    .sub {
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    /* 3 Panels */
+    .friction-panel {
+      background: #0f172a;
+      border: 1.5px solid #1e293b;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .p-title {
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .p-pain {
+      font-size: 11px;
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.1);
+      padding: 4px 8px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+    .p-solve {
+      font-size: 11.5px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+    .p-solve strong {
+      color: #38bdf8;
+    }
+    .p-chip {
+      display: inline-block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      background: #020617;
+      border: 1px solid #1e293b;
+      color: #34d399;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+
+    /* Challenge Box */
+    .challenge-box {
+      margin-top: 16px;
+      background: linear-gradient(180deg, #131c31 0%, #0b1120 100%);
+      border: 1.5px solid #38bdf8;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
+    }
+    .challenge-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+    .prompt-bubble {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 11px;
+      color: #fde68a;
+      line-height: 1.5;
+    }
+    .footer-note {
+      text-align: center;
+      font-size: 9.5px;
+      color: #475569;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="mobile-card">
+      <div class="top-bar">
+        <span class="tag">LESSON 0005 · 实战破局</span>
+        <span class="badge-live">三大现实摩擦对决</span>
+      </div>
+
+      <h1>终结打杂：击穿三大物理摩擦</h1>
+      <p class="sub">为什么人机协作会卡手？从权限、命令恐惧到大模型过敏拒答的工程解法。</p>
+
+      <!-- 痛点 1 -->
+      <div class="friction-panel" style="border-color: #0284c7;">
+        <div class="p-title" style="color: #38bdf8;">🔑 1. 后台权限控制 (Auth Wall)</div>
+        <div class="p-pain">痛点：AI 没登录态，每次卡在权限拦截，喊你去网页点。</div>
+        <div class="p-solve">
+          <strong>工程破局：</strong>“配发访客副卡”。不要明文密码，用 <strong>Personal Access Token (PAT)</strong> 或预热 Cookie 注入环境变量，挂载为独立只读/受限脚本。
+        </div>
+        <div class="p-chip">解法: CLI 封装 / 环境变量 Secret 托管</div>
+      </div>
+
+      <!-- 痛点 2 -->
+      <div class="friction-panel" style="border-color: #f59e0b;">
+        <div class="p-title" style="color: #fbbf24;">🛡️ 2. 敏感命令恐惧 (Black-box Fear)</div>
+        <div class="p-pain">痛点：它弹出一个高危确认，你看不懂影响面，不敢点同意。</div>
+        <div class="p-solve">
+          <strong>工程破局：</strong>强制增加 <strong>“意图翻译与干跑预检（Dry-Run）”</strong> 契约。命令它执行前必须先输出：<strong>1.作用目标 2.影响面 3.回滚方案</strong>，或带上 <code>--dry-run</code>。
+        </div>
+        <div class="p-chip">解法: 规则约束 / 意图透视 / --dry-run 预检</div>
+      </div>
+
+      <!-- 痛点 3 -->
+      <div class="friction-panel" style="border-color: #10b981;">
+        <div class="p-title" style="color: #34d399;">🕊️ 3. 模型过敏拒答 (Safety Refusal)</div>
+        <div class="p-pain">痛点：正常运维合规操作，大模型触发安全敏感机制，死活不肯做。</div>
+        <div class="p-solve">
+          <strong>工程破局：</strong>“合规角色重构与脱敏降维”。将敏感黑话降级为中性系统工程术语（如将“爬取抓取”转换为“本地缓存同步”，“绕过权限”转换为“服务间模拟测试”）。
+        </div>
+        <div class="p-chip">解法: 语境防御重构 / 概念降维重命名</div>
+      </div>
+
+      <!-- 行动卡 -->
+      <div class="challenge-box">
+        <div class="challenge-title">🎯 实战破局首选切入点</div>
+        <div class="prompt-bubble">
+          这 3 个痛点是每一个高阶架构师都会踩到的深水区！<br><br>
+          <strong>💬 回复 1、2 还是 3？</strong><br>
+          告诉我你现在<strong>最想先彻底拔掉哪根刺</strong>，我们直接针对这根刺动手写最小可运行闭环！
+        </div>
+      </div>
+
+      <div class="footer-note">AI 原理 · Harness · Agent 体系课 · 手机原生阅读版</div>
+    </div>
+  </div>
+</body>
+</html>
