@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Lesson 0006 Mobile Card: Command Transparency</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: #020617;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      color: #f8fafc;
+    }
+    .wrapper {
+      padding: 24px 20px 30px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .mobile-card {
+      background: #0b1120;
+      border: 1.5px solid #1e293b;
+      border-radius: 20px;
+      padding: 20px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      width: 100%;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.12);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+    .badge-live {
+      font-size: 10.5px;
+      color: #34d399;
+      font-weight: 600;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+    .sub {
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    /* Comparison Box */
+    .compare-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .box-bad {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .box-good {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1.5px solid #10b981;
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .box-header {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .code-snip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 8px 10px;
+      line-height: 1.5;
+      word-break: break-all;
+    }
+
+    /* 3 Pillars */
+    .pillar-row {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+    }
+    .p-head {
+      font-size: 12px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 4px;
+    }
+    .p-desc {
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    /* Template Box */
+    .template-box {
+      margin-top: 14px;
+      background: linear-gradient(180deg, #131c31 0%, #0b1120 100%);
+      border: 1.5px solid #38bdf8;
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .t-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+    .t-code {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      color: #fde68a;
+      line-height: 1.6;
+    }
+    .footer-note {
+      text-align: center;
+      font-size: 9.5px;
+      color: #475569;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="mobile-card">
+      <div class="top-bar">
+        <span class="tag">LESSON 0006 · 命令掌控权</span>
+        <span class="badge-live">告别盲目审批</span>
+      </div>
+
+      <h1>拆解黑盒：高危命令透视契约</h1>
+      <p class="sub">不再当担惊受怕的背锅侠。建立 3 项硬核审查标准，一眼看穿每条指令的底线与风险。</p>
+
+      <div class="compare-container">
+        <!-- 过去 -->
+        <div class="box-bad">
+          <div class="box-header" style="color:#f87171;">
+            <span>❌ 过去的痛苦：黑盒盲审</span>
+            <span>恐慌背锅</span>
+          </div>
+          <div class="code-snip" style="color:#fca5a5;">
+            "是否允许执行: find . -name '*.bak' -exec rm -rf {} +"<br>
+            <span style="color:#94a3b8; font-size:9.5px;">(你不敢点同意，因为不知道会不会连带删掉系统或未备份的代码)</span>
+          </div>
+        </div>
+
+        <!-- 现在 -->
+        <div class="box-good">
+          <div class="box-header" style="color:#34d399;">
+            <span>✓ 建立契约：意图与边界三联单</span>
+            <span>透明掌控</span>
+          </div>
+          <div class="code-snip" style="color:#a7f3d0;">
+            <strong>🎯 目标：</strong>仅扫描当前项目 <code>./cache/</code> 目录<br>
+            <strong>💥 影响面：</strong>预估清理 3 个文件，不碰任何源码<br>
+            <strong>🛟 回滚：</strong>已由 git 托管，随时执行 <code>git checkout</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- 三大审查支柱 -->
+      <div style="font-size:12.5px; font-weight:700; color:#f8fafc; margin-bottom:8px;">
+        🛡️ 必须强制 AI 遵守的“审查三原则”
+      </div>
+
+      <div class="pillar-row">
+        <div class="p-head">1. 爆炸半径限制 (Blast Radius)</div>
+        <div class="p-desc">操作范围必须锁定在当前项目根目录内！严禁碰 <code>~/.ssh</code>、<code>/etc</code>、全局 node_modules 或系统根目录。</div>
+      </div>
+
+      <div class="pillar-row">
+        <div class="p-head">2. 空跑预检模式 (Dry-Run First)</div>
+        <div class="p-desc">只要涉及删除或批量改名，严禁直接执行！必须先用只读命令（如 <code>ls</code>、<code>--dry-run</code>）列出拟变动清单。</div>
+      </div>
+
+      <div class="pillar-row">
+        <div class="p-head">3. 必须提供救生圈 (Rollback Plan)</div>
+        <div class="p-desc">高危操作前，必须说明：如果执行报错或删错，一条什么命令能够瞬间原样恢复。</div>
+      </div>
+
+      <!-- 一键配置模板 -->
+      <div class="template-box">
+        <div class="t-title">📋 拷打 AI 的专属指令模板（直接复制使用）</div>
+        <div class="t-code">
+          "先不要执行！请先向我汇报：<br>
+          1. 这条命令会改动/删除哪几个具体文件？<br>
+          2. 它会不会影响当前目录之外的文件？<br>
+          3. 如果改坏了，用哪一条命令可以一键回滚？"
+        </div>
+      </div>
+
+      <div class="footer-note">AI 原理 · Harness · Agent 体系课 · 手机原生阅读版</div>
+    </div>
+  </div>
+</body>
+</html>
