@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0004: ReAct 状态机 —— Agent 自治循环与死锁解构</title>
+  <link rel="stylesheet" href="../assets/style.css?v=20260930_03">
+</head>
+<body>
+
+  <header>
+    <div class="lesson-meta">Lesson 0004 · 状态机与智能体循环</div>
+    <h1>ReAct 状态机：Agent 是如何推导并自主干活的？</h1>
+    <div style="display: flex; gap: 0.5rem; margin-top: 1rem; overflow-x: auto; padding-bottom: 0.2rem;">
+      <a href="#diagram-section" class="btn" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; text-decoration: none;">📐 架构流程</a>
+      <a href="#simulator-section" class="btn" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; background: var(--code-bg); color: var(--text-color); border: 1px solid var(--border-color); text-decoration: none;">🎛️ 事件循环追踪器</a>
+      <a href="#quiz-section" class="btn" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; background: rgba(15,118,110,0.15); color: var(--success-color); border: 1px solid var(--success-color); text-decoration: none;">✍️ 直达思考题</a>
+    </div>
+  </header>
+
+  <main>
+    <h2>一、 核心心智模型：从单步 Prompt 到无限事件循环</h2>
+    <p>普通用户使用 AI 是一问一答（Request-Response），而 <strong>Agent 的本质是一个运行在宿主 Harness 上的自治状态机（State Machine）</strong>。</p>
+    <blockquote>
+      <strong>ReAct 经典范式：</strong> Thought（认知推导） ➔ Action（下发工具） ➔ Observation（观察物理反馈） ➔ 循环判定。
+    </blockquote>
+    <p>作为 Android 工程师，你可以完全将它映射为你最熟悉的 <strong>Looper / Handler / MessageQueue</strong>：</p>
+    <ul>
+      <li><strong>MessageQueue 消息队列</strong> ➔ 模型的 <strong>Context 上下文历史</strong>。每次工具执行的 Observation 都是一条新入队的消息。</li>
+      <li><strong>Looper 事件泵</strong> ➔ 外部 <strong>Harness 驱动循环</strong>。不断检查队列是否有未完成的任务，唤醒模型计算下一轮动作。</li>
+      <li><strong>Handler 消息分发器</strong> ➔ <strong>Tool Interceptor 工具执行器</strong>。根据模型吐出的函数名路由给具体的物理实现。</li>
+    </ul>
+
+    <h2 id="diagram-section">二、 手机竖屏架构卡片（点击查看大图）</h2>
+    <div style="text-align: center; margin: 1.5rem 0;">
+      <a href="../lesson004_mobile.png" target="_blank">
+        <img src="../lesson004_mobile.png" alt="Lesson 0004 Mobile Card" style="max-width: 100%; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
+      </a>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">▲ 专为手机优化的高清竖屏流式架构图（点击可全屏缩放）</p>
+    </div>
+
+    <h2>三、 为什么 Agent 会陷入死锁打杂？（The Deadlock Trap）</h2>
+    <p>你之前之所以不得不替 AI “擦屁股”、频繁去网页处理权限，根因就在于死锁：</p>
+    <div style="background: rgba(225, 29, 72, 0.08); border-left: 3px solid #e11d48; padding: 0.8rem 1.2rem; border-radius: 0 6px 6px 0; margin: 1.2rem 0; font-size: 0.92rem;">
+      <strong>🚨 消息停滞陷阱：</strong> 当底层物理接口返回 <code>403 Forbidden</code>，并且没有说明具体的鉴权要求时，Agent 的 MessageQueue 中只有“上一轮失败了”这一条贫瘠信息。<br>
+      缺乏有效反馈时，模型只能基于幻觉胡乱猜测重试，导致事件循环永远无法跳出，直到烧光 Token 或把人类叫来人工点击！
+    </div>
+
+    <h2 id="simulator-section">四、 交互模拟：单步单步调试 ReAct 事件循环</h2>
+    <div class="interactive-box">
+      <h3>🎛️ Agent 事件泵追踪器 (Live Step Debugger)</h3>
+      <p style="font-size:0.88rem; color:var(--text-muted); margin-bottom:1rem;">点击下方按钮，亲手单步推进一次自动化审批的 ReAct 循环：</p>
+      
+      <button class="btn" id="step-btn" onclick="nextStep()">单步推进下一状态 (Step ➔)</button>
+      <button class="btn" style="background:var(--code-bg); color:var(--text-color); border:1px solid var(--border-color); margin-left:0.5rem;" onclick="resetStep()">重置循环</button>
+
+      <div id="step-display" style="margin-top:1.2rem; background:var(--code-bg); border:1px solid var(--border-color); border-radius:6px; padding:1rem; font-family:monospace; font-size:0.85rem; line-height:1.6; min-height:120px;">
+        <span style="color:var(--text-muted);">[待机状态] 点击上方按钮启动第 1 轮循环...</span>
+      </div>
+    </div>
+
+    <h2 id="quiz-section">五、 检索思考与实战行动卡</h2>
+    <div class="interactive-box">
+      <h3>❓ 本课核心思考题（支持直接在 Telegram 回复）</h3>
+      <p>结合 Android 消息机制与刚才的 ReAct 循环：</p>
+      <div style="background:var(--bg-color); border:1px solid var(--border-color); border-radius:6px; padding:1rem; font-size:0.92rem; line-height:1.6;">
+        <strong>1. 在 ReAct 状态机中，谁扮演了存放所有历史事件的 <code>MessageQueue</code>？</strong><br>
+        <strong>2. 当 Agent 遇到 403 产生死锁打转时，从消息机制角度看，必须给它增加什么拦截能力？</strong>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>AI 原理、Harness 与 Agent 进阶课 · <a href="../index.html">返回课程主页</a> · <a href="../GLOSSARY.md">概念词典</a></p>
+  </footer>
+
+  <script>
+    let step = 0;
+    const states = [
+      {
+        tag: "THOUGHT · 认知推导",
+        color: "var(--accent-color)",
+        content: "LLM 芯片推导: '目标是同步后台配置，但缺少有效 token，分析 Tool 清单，匹配到 fetch_admin_token() 工具。'"
+      },
+      {
+        tag: "ACTION · 动作下发",
+        color: "var(--success-color)",
+        content: "Harness 拦截 ToolCall: 触发 fetch_admin_token(scope='admin_config')，从 Keychain 挂载并注入本地鉴权凭证。"
+      },
+      {
+        tag: "OBSERVATION · 环境观察",
+        color: "var(--warning-color)",
+        content: "物理 API 真实返回: {'code': 200, 'token': 'eyJh...89', 'msg': '授权成功'}. 该消息作为新节点追加进 Context (MessageQueue)。"
+      },
+      {
+        tag: "DECISION & LOOP · 判定回流",
+        color: "var(--accent-color)",
+        content: "Is Goal Met? NO (仅完成了前置鉴权，尚未同步配置)。模型带着新 Token 启动第 2 轮 Thought，准备调用 sync_data()！"
+      },
+      {
+        tag: "FINAL DELIVERED · 任务达成",
+        color: "var(--success-color)",
+        content: "第 2 轮执行完成，数据同步完毕。Is Goal Met? YES！事件循环跳出，体面交付最终结果给用户。"
+      }
+    ];
+
+    function nextStep() {
+      const display = document.getElementById("step-display");
+      if (step < states.length) {
+        const s = states[step];
+        display.innerHTML += `
+          <div style="margin-top:0.6rem; border-top:1px dashed var(--border-color); padding-top:0.4rem;">
+            <strong style="color:${s.color};">[第 ${step+1} 步 · ${s.tag}]</strong><br>
+            <span>${s.content}</span>
+          </div>
+        `;
+        step++;
+      } else {
+        display.innerHTML += `<div style="color:var(--success-color); margin-top:0.6rem;">🎉 完整 ReAct 循环演练完成！点击重置可再次体验。</div>`;
+      }
+    }
+
+    function resetStep() {
+      step = 0;
+      document.getElementById("step-display").innerHTML = '<span style="color:var(--text-muted);">[待机状态] 点击上方按钮启动第 1 轮循环...</span>';
+    }
+  </script>
+</body>
+</html>
