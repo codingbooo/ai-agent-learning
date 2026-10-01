@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Lesson 0007 Mobile Card: Custom Tool & Auth Bridge</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: #020617;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      color: #f8fafc;
+    }
+    .wrapper {
+      padding: 24px 20px 30px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .mobile-card {
+      background: #0b1120;
+      border: 1.5px solid #1e293b;
+      border-radius: 20px;
+      padding: 20px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      width: 100%;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+    .badge-live {
+      font-size: 10.5px;
+      color: #34d399;
+      font-weight: 600;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+    .sub {
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    /* 3-Step Bridge */
+    .step-box {
+      background: #0f172a;
+      border: 1.5px solid #1e293b;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .step-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .step-name {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .step-desc {
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+    .code-demo {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin-top: 6px;
+      color: #34d399;
+      word-break: break-all;
+    }
+
+    /* Secret Vault Highlight */
+    .vault-box {
+      background: rgba(251, 191, 36, 0.08);
+      border: 1.5px solid #d97706;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 14px;
+    }
+    .v-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fbbf24;
+      margin-bottom: 4px;
+    }
+    .v-desc {
+      font-size: 11px;
+      color: #fde68a;
+      line-height: 1.45;
+    }
+
+    /* Challenge Box */
+    .challenge-box {
+      margin-top: 16px;
+      background: linear-gradient(180deg, #131c31 0%, #0b1120 100%);
+      border: 1.5px solid #38bdf8;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
+    }
+    .challenge-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+    .prompt-bubble {
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 9px 10px;
+      font-size: 11px;
+      color: #fde68a;
+      line-height: 1.5;
+    }
+    .footer-note {
+      text-align: center;
+      font-size: 9.5px;
+      color: #475569;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="mobile-card">
+      <div class="top-bar">
+        <span class="tag">LESSON 0007 · 工具协议化</span>
+        <span class="badge-live">制造通行副卡</span>
+      </div>
+
+      <h1>亲手造卡：从网页点选到专属 Tool</h1>
+      <p class="sub">把反复肉身登录的后台操作，降维封装为 Agent 能够自主调用的免密工具。</p>
+
+      <!-- 步骤 1: 抓包降维 -->
+      <div class="step-box">
+        <div class="step-head">
+          <span class="step-name">1. F12 抓包：将网页降维为 cURL</span>
+          <span style="font-size:10px; color:#94a3b8;">协议层脱水</span>
+        </div>
+        <div class="step-desc">
+          网页上的五级菜单和按钮，本质上只是一个带 Cookie/Header 的 HTTP 请求。按 F12 复制为 cURL 命令。
+        </div>
+        <div class="code-demo">curl -X POST https://api.admin/approve -H "Cookie: session=..."</div>
+      </div>
+
+      <!-- 步骤 2: 凭证与变量解耦 -->
+      <div class="step-box">
+        <div class="step-head">
+          <span class="step-name">2. 凭证解耦：把死数据变成脚本</span>
+          <span style="font-size:10px; color:#34d399;">参数化</span>
+        </div>
+        <div class="step-desc">
+          写一个 15 行的 Python/Shell 小脚本，把动态参数（如 `user_id`）作为命令行入参，凭据由本地环境统一托管。
+        </div>
+        <div class="code-demo" style="color:#38bdf8;">python approve.py --user 10024 --role developer</div>
+      </div>
+
+      <!-- 步骤 3: 声明 JSON Schema -->
+      <div class="step-box">
+        <div class="step-head">
+          <span class="step-name">3. 声明契约：告诉 Agent 怎么用</span>
+          <span style="font-size:10px; color:#fbbf24;">Tool 契约</span>
+        </div>
+        <div class="step-desc">
+          用一段标准 JSON 告诉模型：“当你需要审批权限时，调用 <code>approve_perm(userId)</code>”，无需向人类求助！
+        </div>
+      </div>
+
+      <!-- 核心心法 -->
+      <div class="vault-box">
+        <div class="v-title">🔑 绝密心法：模型不需要“看见网页”</div>
+        <div class="v-desc">
+          让 Agent 操纵浏览器去点按钮，是效率最低、最容易被验证码卡死的做法！<strong>直接调用底层 API 接口工具，速度提升 50 倍，成功率从 40% 暴涨至 100%！</strong>
+        </div>
+      </div>
+
+      <!-- 实战挑战卡 -->
+      <div class="challenge-box">
+        <div class="challenge-title">🎯 本课实战行动卡 (Action Challenge)</div>
+        <div class="prompt-bubble">
+          <strong>💬 思考并回复我：</strong><br>
+          如果现在你要为你最常用的一个内部后台操作制作一张“通行副卡”：<br>
+          1. 它的<strong>核心入参（Arguments）</strong>通常会有哪 1~2 个？<br>
+          2. 执行成功后，你最希望它给 Agent 返回什么结果（JSON 还是简短文本）？
+        </div>
+      </div>
+
+      <div class="footer-note">AI 原理 · Harness · Agent 体系课 · 手机原生阅读版</div>
+    </div>
+  </div>
+</body>
+</html>
