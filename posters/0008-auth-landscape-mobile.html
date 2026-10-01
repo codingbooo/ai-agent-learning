@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Lesson 0008 Mobile Card: Authentication Landscape</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: #020617;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      color: #f8fafc;
+    }
+    .wrapper {
+      padding: 24px 20px 30px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .mobile-card {
+      background: #0b1120;
+      border: 1.5px solid #1e293b;
+      border-radius: 20px;
+      padding: 20px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      width: 100%;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 3px 8px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+    .badge-live {
+      font-size: 10.5px;
+      color: #34d399;
+      font-weight: 600;
+    }
+    h1 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.35;
+      margin-bottom: 6px;
+    }
+    .sub {
+      font-size: 11.5px;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    /* Auth Cards */
+    .auth-item {
+      background: #0f172a;
+      border: 1.5px solid #1e293b;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+    .auth-item.highlight {
+      border-color: #0284c7;
+      background: linear-gradient(180deg, rgba(14, 165, 233, 0.1) 0%, rgba(15, 23, 42, 0.8) 100%);
+    }
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .item-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .item-chip {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.08);
+      color: #94a3b8;
+    }
+    .item-metaphor {
+      font-size: 11px;
+      color: #fde68a;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+    .item-desc {
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    /* Agent Strategy Box */
+    .strategy-box {
+      margin-top: 14px;
+      background: linear-gradient(180deg, #131c31 0%, #0b1120 100%);
+      border: 1.5px solid #38bdf8;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 4px 16px rgba(56, 189, 248, 0.15);
+    }
+    .strategy-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin-bottom: 6px;
+    }
+    .strategy-content {
+      font-size: 11px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+    .footer-note {
+      text-align: center;
+      font-size: 9.5px;
+      color: #475569;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="mobile-card">
+      <div class="top-bar">
+        <span class="tag">LESSON 0008 · 认证全景</span>
+        <span class="badge-live">身份识别心智</span>
+      </div>
+
+      <h1>主流认证全景：SSO 到底是何方神圣？</h1>
+      <p class="sub">从酒店房卡、免检手环到数字身份证：透视现代 Web、App 与机器人的身份凭证体系。</p>
+
+      <!-- 1. Cookie/Session -->
+      <div class="auth-item">
+        <div class="item-header">
+          <span class="item-title">🏨 1. Cookie &amp; Session</span>
+          <span class="item-chip">传统 Web 专属</span>
+        </div>
+        <div class="item-metaphor">💡 隐喻：酒店房卡（钥匙在门锁前台匹配）</div>
+        <div class="item-desc">输入账号密码后，服务端存状态，给浏览器塞一个 SessionID。浏览器后续自动携带。对 App/脚本极不友好，易过期。</div>
+      </div>
+
+      <!-- 2. Token / JWT -->
+      <div class="auth-item">
+        <div class="item-header">
+          <span class="item-title">🪪 2. Token / JWT</span>
+          <span class="item-chip">App &amp; API 标准</span>
+        </div>
+        <div class="item-metaphor">💡 隐喻：防伪盖章工作证（自包含权限信息）</div>
+        <div class="item-desc">Android 最常见的 <code>Bearer Token</code>。服务端无需查数据库，凭数学签名即可验真。短效 AccessToken + 长效 RefreshToken 配合。</div>
+      </div>
+
+      <!-- 3. SSO (重点) -->
+      <div class="auth-item highlight">
+        <div class="item-header">
+          <span class="item-title" style="color:#38bdf8;">🌐 3. SSO (Single Sign-On)</span>
+          <span class="item-chip" style="background:#0284c7; color:white;">企业级王道</span>
+        </div>
+        <div class="item-metaphor">💡 隐喻：迪士尼通票手环（一处检票，玩遍全园）</div>
+        <div class="item-desc">
+          <strong>单点登录：</strong>公司有 GitLab、Jira、OA、报销等几十个系统。统一把认证甩给一个<strong>独立认证中心</strong>（如飞书/企微/Okta）。只需登录一次，其他系统免密通行！
+        </div>
+      </div>
+
+      <!-- 4. PAT / API Key -->
+      <div class="auth-item" style="border-color:#10b981;">
+        <div class="item-header">
+          <span class="item-title" style="color:#34d399;">🤖 4. PAT (Personal Access Token)</span>
+          <span class="item-chip" style="color:#34d399;">Agent 破局首选</span>
+        </div>
+        <div class="item-metaphor">💡 隐喻：专属访客通行副卡（给管家的备用钥匙）</div>
+        <div class="item-desc">
+          <strong>让脚本和机器人干活的唯一正道！</strong>在网页设置里主动给脚本签发一个长效/特定权限的 Token，彻底绕开验证码与登录页。
+        </div>
+      </div>
+
+      <!-- 破局指南 -->
+      <div class="strategy-box">
+        <div class="strategy-title">🎯 针对你的痛点：Agent 到底该用哪个？</div>
+        <div class="strategy-content">
+          • <strong>下策：</strong>让 Agent 去网页输账号密码/短信验证码（100% 被反爬卡死）；<br>
+          • <strong>中策：</strong>从浏览器 F12 复制已登录的 Cookie（能用几天，但需人工刷新）；<br>
+          • <strong>上策：</strong>在 SSO 或系统后台生成一个 <strong>Personal Access Token (PAT)</strong>，长效免密闭环！
+        </div>
+      </div>
+
+      <div class="footer-note">AI 原理 · Harness · Agent 体系课 · 手机原生阅读版</div>
+    </div>
+  </div>
+</body>
+</html>
