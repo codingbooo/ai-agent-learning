@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lesson 0005: 认证全景与实战破局 —— 从 SSO 到 Agent 通行副卡</title>
+  <link rel="stylesheet" href="../assets/style.css?v=20261001_01">
+</head>
+<body>
+
+  <header>
+    <div class="lesson-meta">Lesson 0005 · 凭证工程与实战破局</div>
+    <h1>认证全景与实战破局：从 SSO 到 Agent 通行副卡</h1>
+    <p>剖析 Cookie、Token、SSO 与 PAT 的物理本质，彻底终结肉身搬砖与登录墙卡死。</p>
+  </header>
+
+  <main>
+    <h2>一、 核心认知：四大主流认证体系的本质映射</h2>
+    <p>很多工程师习惯在网页端点选，却不清楚浏览器背后究竟发生了什么。我们用一套精准的现实隐喻来还原底层网络协议：</p>
+
+    <div class="interactive-box">
+      <h3>🏨 1. Cookie &amp; Session —— 酒店房卡模式（传统 Web）</h3>
+      <p>你在登录页输账密 ➔ 服务端在内存/Redis 建一个 Session ➔ 往浏览器 <code>Set-Cookie: sessionId=xyz</code>。后续浏览器发任何请求都会自动带上这串字符。</p>
+      <p style="color:var(--warning-color); font-size:0.9rem;">
+        <strong>⚠️ 为什么 Agent 最怕它：</strong> 房卡不仅会频繁过期，而且通常伴随着复杂的图形/短信验证码与防 CSRF 机制。让 Agent 模拟浏览器点选，极容易因为页面微调或验证码而全盘崩溃。
+      </p>
+    </div>
+
+    <div class="interactive-box">
+      <h3>🪪 2. Token / JWT —— 防伪工作证模式（App &amp; 微服务）</h3>
+      <p>Android 工程师最熟悉的 <code>Authorization: Bearer &lt;Token&gt;</code>。服务端自己不保留状态，直接把用户 ID、角色和过期时间签名加密成一段字符。任何服务只要用公钥验真即可秒级放行。</p>
+      <p style="color:var(--accent-color); font-size:0.9rem;">
+        <strong>💡 双 Token 架构：</strong> 短效 AccessToken（如 15 分钟）保证安全，长效 RefreshToken（如 30 天）放在本地安全存储中做静默刷新，用户完全无需反复登录。
+      </p>
+    </div>
+
+    <div class="interactive-box" style="border-color:var(--accent-color);">
+      <h3>🌐 3. SSO (Single Sign-On) —— 迪士尼通票手环模式（企业级核心）</h3>
+      <p>公司内部几十个系统（GitLab、Jira、OA、报销系统）各建一套账号密码是灾难。SSO 把鉴权抽离给一个独立的<strong>统一认证中心（IdP，如飞书/Okta/Keycloak）</strong>：</p>
+      <ol style="margin-bottom:0.8rem; font-size:0.92rem;">
+        <li>你访问 GitLab，GitLab 发现你没登录，将你重定向至 SSO 统一认证中心；</li>
+        <li>你在 SSO 认证中心刷一次工牌或扫码；</li>
+        <li>认证中心给你签发授权票据（Ticket/Code）并重定向回 GitLab；</li>
+        <li>下午你访问 Jira 时，Jira 再次把你踢到认证中心，认证中心认出你已登录，<strong>直接免密秒发门票送回 Jira！</strong></li>
+      </ol>
+      <p style="color:var(--success-color); font-size:0.9rem;">
+        <strong>✓ 核心价值：</strong> 一处登录，处处通行；员工离职只需在认证中心一键停用，全公司系统立即阻断。
+      </p>
+    </div>
+
+    <div class="interactive-box" style="border-color:var(--success-color); background:rgba(15,118,110,0.05);">
+      <h3>🤖 4. PAT (Personal Access Token) —— 专属访客副卡（Agent 自动化正道）</h3>
+      <p>在系统后台（如 GitLab/GitHub 的 Developer Settings）主动给自己签发的机器专用 Token。<strong>精准圈定权限范围、设置长有效期、彻底免除人机验证码！</strong></p>
+    </div>
+
+    <h2>二、 Agent 破解登录墙的三重境界</h2>
+    <div style="background:var(--code-bg); border:1px solid var(--border-color); border-radius:8px; padding:1.2rem; margin:1.5rem 0; line-height:1.7;">
+      <span style="color:var(--warning-color); font-weight:700;">[下策 · 打杂死路]</span> 让 Agent 启动无头浏览器，肉身去网页输账密/点 SSO 扫码 ➔ <strong>100% 被验证码拦截，频繁喊人</strong>。<br>
+      <span style="color:var(--accent-color); font-weight:700;">[中策 · 临时应急]</span> 人在浏览器完成一次 SSO，按 F12 抓出有效 Cookie，存入本地文件供脚本读取 ➔ <strong>免密跑几天，失效后需人工刷新</strong>。<br>
+      <span style="color:var(--success-color); font-weight:700;">[上策 · 工业正道]</span> 在该后台或 SSO 中心申请一个 PAT / API Key，注入本地环境变量，Agent 封装为 Tool 静默调用 ➔ <strong>全自动终身免维护！</strong>
+    </div>
+
+    <h2>三、 交互式自测：为你的后台对齐方案</h2>
+    <div class="interactive-box">
+      <h3>❓ 实战决策题</h3>
+      <p><strong>你现在要让 Agent 每天凌晨自动拉取公司内网某个系统的报表，该系统只支持公司内部 SSO 扫码登录，没有开放生成长效 PAT 的权限。下列哪种工程组合拳能最大程度减少你的人工打杂成本？</strong></p>
+
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        A. 每天凌晨定闹钟爬起来，人工扫码通过后让 Agent 开始跑
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, true)">
+        B. 人工登录一次并抓取 Session 存为本地文件，脚本每天优先读取，仅在 401 失败时才通知你扫码续期
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        C. 把你的个人飞书/企微账号密码明文写在 Agent 的提示词里让它自动模拟扫码
+      </div>
+      <div class="quiz-option" onclick="checkAnswer(this, false)">
+        D. 让 Agent 反复发送空请求，直到系统防御机制失效放行
+      </div>
+
+      <div id="quiz-feedback" class="quiz-feedback"></div>
+    </div>
+  </main>
+
+  <footer>
+    <p>AI 原理、Harness 与 Agent 进阶课 · <a href="../index.html">返回课程主页</a> · <a href="../GLOSSARY.md">概念词典</a> · <a href="../MISSION.md">使命文档</a></p>
+  </footer>
+
+  <script>
+    function checkAnswer(el, isCorrect) {
+      const feedback = document.getElementById("quiz-feedback");
+      const options = document.querySelectorAll(".quiz-option");
+      options.forEach(opt => opt.style.borderColor = "var(--border-color)");
+
+      if (isCorrect) {
+        el.style.borderColor = "var(--success-color)";
+        feedback.className = "quiz-feedback correct";
+        feedback.innerHTML = "<strong>✅ 回答完全正确！</strong> 这正是工业界在无法获取系统开放 API（无 PAT）时最优雅的折中工程方案（中策加熔断）：建立本地 Session 凭证缓存。只要登录态有效，Agent 完全静默跑；只有在确认为 401 Unauthorized 时，才发起单次人机协同续期，把人工介入频次从每天数次降到每周甚至每月一次！";
+      } else {
+        el.style.borderColor = "var(--warning-color)";
+        feedback.className = "quiz-feedback wrong";
+        feedback.innerHTML = "<strong>❌ 再思考一下：</strong> 扫码是防机器人的强安全机制，无法被纯文本账密攻破；盲目重试更是会被直接封 IP。想一想，怎样利用一次登录的存量状态做本地持久化？";
+      }
+    }
+  </script>
+</body>
+</html>
