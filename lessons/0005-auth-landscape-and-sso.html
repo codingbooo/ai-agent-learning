@@ -155,7 +155,7 @@ sequenceDiagram
     WebServer->>WebServer: 2. 校验账号密码哈希
     WebServer->>SessionStore: 3. SET session:08f3a9 {uid: 1001, role: "admin", exp: 1790990000}
     SessionStore-->>WebServer: 4. OK
-    WebServer-->>Browser: 5. 200 OK<br/>Set-Cookie: sid=08f3a9; Path=/; HttpOnly; Secure; SameSite=Lax
+    WebServer-->>Browser: 5. 200 OK<br/>Set-Cookie: sid=08f3a9 (Path=/ HttpOnly Secure SameSite=Lax)
     Note over Browser: 浏览器遵循同源策略隔离存储 Cookie
     Browser->>WebServer: 6. GET /api/user/profile<br/>Cookie: sid=08f3a9
     WebServer->>SessionStore: 7. GET session:08f3a9
@@ -205,7 +205,7 @@ sequenceDiagram
     App->>AuthServer: 1. POST /oauth/token (账密 / 授权码)
     AuthServer->>AuthServer: 2. 签发短效 AT (15m, RS256 签名)<br/>签发长效 RT (30d, 存入持久库)
     AuthServer-->>App: 3. { access_token, refresh_token, expires_in: 900 }
-    App->>Gateway: 4. GET /api/v1/orders<br/>Authorization: Bearer &lt;Access_Token&gt;
+    App->>Gateway: 4. GET /api/v1/orders<br/>Authorization: Bearer [Access_Token]
     Gateway->>Gateway: 5. 本地使用 JWKS 公钥验签 + 校验 exp<br/>(零 RPC / 零 DB 访问)
     Gateway-->>App: 6. 200 OK (订单数据)
     Note over App,Gateway: 15 分钟后 Access Token 过期 (exp 超期)
@@ -214,7 +214,7 @@ sequenceDiagram
     App->>AuthServer: 9. POST /oauth/refresh<br/>{ refresh_token: &lt;Refresh_Token&gt; }
     AuthServer->>AuthServer: 10. 检查数据库：RT 是否合法且未被吊销
     AuthServer-->>App: 11. 200 OK: 签发全新 Access Token
-    App->>Gateway: 12. 重发请求 GET /api/v1/orders<br/>Authorization: Bearer &lt;New_Access_Token&gt;
+    App->>Gateway: 12. 重发请求 GET /api/v1/orders<br/>Authorization: Bearer [New_Access_Token]
     Gateway-->>App: 13. 200 OK (订单数据)
       </div>
       <div class="diagram-caption">图 2: JWT 双 Token 验证与透明静默刷新完整时序</div>
@@ -259,7 +259,7 @@ sequenceDiagram
     ClientApp->>IdP: 9. 后台发起 POST /token<br/>code=AUTH_CODE_456&client_id=crm_app&code_verifier=raw_secret_str
     IdP->>IdP: 10. 校验 code 有效性<br/>计算 SHA256(verifier) 严格比对步骤 4 暂存的 challenge
     IdP-->>ClientApp: 11. 200 OK<br/>{ access_token, id_token (OIDC), refresh_token }
-    ClientApp->>ResourceAPI: 12. GET /api/v1/customer/data<br/>Authorization: Bearer &lt;Access_Token&gt;
+    ClientApp->>ResourceAPI: 12. GET /api/v1/customer/data<br/>Authorization: Bearer [Access_Token]
     ResourceAPI-->>ClientApp: 13. 200 OK (业务数据)
       </div>
       <div class="diagram-caption">图 3: OAuth 2.0 授权码模式 + PKCE 动态防劫持时序</div>
